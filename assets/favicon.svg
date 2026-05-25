@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .bg { fill: #FFFFFF; }
+    .fg { stroke: #0F172A; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #1c1c1e; }
+      .fg { stroke: #FFFFFF; }
+    }
+  </style>
+  <rect width="100" height="100" class="bg" rx="50" />
+  <circle cx="50" cy="50" r="47" fill="none" class="fg" stroke-width="6" />
+  <g transform="translate(15, 18)" fill="none" class="fg" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="24" cy="38" r="12" />
+    <line x1="36" y1="14" x2="36" y2="50" />
+    <polyline points="46,26 58,38 46,50" />
+  </g>
+</svg>

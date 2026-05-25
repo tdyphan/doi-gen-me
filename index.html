@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOIGenMe v1.2</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  
+  <!-- CDN: Tailwind CSS Play -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0066cc',
+            'primary-focus': '#0071e3',
+            'primary-on-dark': '#2997ff',
+            canvas: '#ffffff',
+            'canvas-parchment': '#f5f5f7',
+            'surface-pearl': '#fafafc',
+            'surface-tile-1': '#272729',
+            'surface-tile-2': '#2a2a2c',
+            'surface-tile-3': '#252527',
+            ink: '#1d1d1f',
+            'ink-muted-80': '#333333',
+            'ink-muted-48': '#7a7a7a',
+            hairline: '#e0e0e0',
+            'divider-soft': 'rgba(0, 0, 0, 0.04)'
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          letterSpacing: {
+            'apple-hero': '-0.015em',
+            'apple-display': '-0.022em',
+            'apple-body': '-0.022em',
+            'apple-nav': '-0.01em'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- CDN: Vue 3 Global Build -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!-- Custom CSS tối thiểu -->
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body class="bg-canvas dark:bg-black text-ink dark:text-gray-100 font-sans antialiased overflow-x-hidden selection:bg-primary/20">
+  
+  <div id="app" v-cloak class="flex flex-col min-h-screen w-full">
+    
+    <!-- COMBINED NAV FROSTED -->
+    <nav class="h-[60px] bg-canvas/80 dark:bg-black/80 backdrop-frosted sticky top-0 z-50 border-b border-black/5 dark:border-white/10 flex items-center justify-between px-4 md:px-8 w-full">
+      <div class="flex items-center gap-4 md:gap-8">
+        <h1 class="text-[21px] font-semibold tracking-tight text-ink dark:text-white flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="24" height="24">
+            <rect width="100" height="100" class="fill-transparent" rx="50" />
+            <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="6" />
+            <g transform="translate(15, 18)" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="24" cy="38" r="12" />
+              <line x1="36" y1="14" x2="36" y2="50" />
+              <polyline points="46,26 58,38 46,50" />
+            </g>
+          </svg>
+          <span class="flex items-baseline gap-1.5">
+            DOIGenMe
+            <span class="text-[13px] font-medium text-ink-muted-48 tracking-normal">v1.2</span>
+          </span>
+        </h1>
+        
+        <div class="hidden md:flex items-center gap-6 text-[14px] text-ink-muted-80 dark:text-gray-300">
+          <a href="#" class="text-primary dark:text-white font-medium transition-colors">Extraction</a>
+          <a href="#" @click.prevent="showProjectsModal = true" class="hover:text-primary dark:hover:text-white transition-colors">{{ t.projects }}</a>
+          <a href="#" class="hover:text-primary dark:hover:text-white transition-colors">API Docs</a>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4 text-[14px]">
+        <button @click="clearInput" class="hover:text-red-500 dark:hover:text-red-400 text-ink-muted-48 transition-colors focus-visible:ring-2 focus-visible:ring-primary outline-none rounded" :aria-label="t.clear || 'Clear'" :title="t.clear || 'Clear'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+        </button>
+        <button @click="toggleLang" class="hover:text-ink dark:hover:text-white text-ink-muted-48 transition-colors focus-visible:ring-2 focus-visible:ring-primary outline-none rounded" :aria-label="t.langToggle" :title="t.langToggle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+        </button>
+        <button @click="toggleTheme" class="hover:text-ink dark:hover:text-white text-ink-muted-48 transition-colors focus-visible:ring-2 focus-visible:ring-primary outline-none rounded" :aria-label="t.themeToggle" :title="t.themeToggle">
+          <svg v-if="!isDark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 w-full flex flex-col">
+      
+      <!-- HERO TILE -->
+      <section class="bg-canvas dark:bg-black w-full px-4 border-b border-divider-soft dark:border-surface-tile-2 transition-all duration-300 flex flex-col items-center" 
+               :class="citations.length === 0 ? 'py-4 md:py-8 min-h-[calc(100vh-60px)] justify-center' : 'py-4 md:py-6 justify-start shrink-0'">
+        <div class="max-w-[980px] w-full flex flex-col items-center text-center transition-all duration-300"
+             :class="citations.length === 0 ? 'mb-6 md:mb-10' : 'mb-4'">
+          <h2 class="font-semibold tracking-apple-hero text-ink dark:text-white leading-[1.07] transition-all duration-300"
+              :class="citations.length === 0 ? 'text-[32px] md:text-[56px] mb-2 md:mb-4' : 'text-[24px] md:text-[32px] mb-1'">
+            DOI Extractor.
+          </h2>
+          <p v-show="citations.length === 0" class="text-[17px] md:text-[24px] font-light tracking-normal text-ink dark:text-gray-300 leading-[1.14] max-w-2xl mx-auto">
+            {{ t.subtitle }}
+          </p>
+        </div>
+
+        <!-- INPUT CARD (Store Utility style) -->
+        <div class="w-full max-w-[980px] flex-1 max-h-[500px] bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-2 rounded-[18px] p-4 md:p-6 shadow-none flex flex-col">
+          <div class="flex items-center justify-between border-b border-hairline dark:border-surface-tile-2 pb-3 mb-3 shrink-0">
+            <div class="flex gap-6 text-[14px]">
+              <span class="font-semibold text-ink dark:text-white border-b-2 border-primary pb-3 -mb-[13px]">Raw Text</span>
+              <span class="text-ink-muted-48 hover:text-ink dark:hover:text-white transition-colors cursor-pointer">PDF Upload</span>
+            </div>
+          </div>
+          
+          <textarea v-model="textInput" class="w-full flex-1 bg-transparent text-ink dark:text-white placeholder-ink-muted-48 focus:outline-none resize-none font-sans text-[17px] leading-[1.47] tracking-apple-body transition-all duration-300" :class="citations.length === 0 ? 'min-h-[120px]' : 'min-h-[80px] md:min-h-[100px]'" :placeholder="t.placeholder" aria-label="DOI Input" :disabled="queueState.active"></textarea>
+          
+          <div v-if="queueState.active" class="mt-4 p-4 rounded-[11px] bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[14px] font-medium text-ink dark:text-white">
+                {{ t.queueProcessing }}: {{ progressDone }} / {{ progressTotal }}
+              </span>
+              <div class="flex gap-2">
+                <button @click="togglePause" class="px-3 py-1 rounded-[7px] text-[13px] bg-surface-pearl dark:bg-surface-tile-2 border border-hairline dark:border-surface-tile-3 hover:bg-hairline dark:hover:bg-surface-tile-3 transition-colors outline-none">
+                  {{ queueState.paused ? t.resume : t.pause }}
+                </button>
+                <button @click="cancelQueue" class="px-3 py-1 rounded-[7px] text-[13px] text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors outline-none">
+                  {{ t.cancel }}
+                </button>
+              </div>
+            </div>
+            <div class="w-full h-2 bg-hairline dark:bg-surface-tile-3 rounded-full overflow-hidden">
+              <div class="h-full bg-primary transition-all duration-200" :style="{ width: (progressDone / progressTotal * 100) + '%' }"></div>
+            </div>
+            <div class="flex gap-4 mt-3 text-[12px] text-ink-muted-48">
+              <span class="text-green-600 dark:text-green-400">{{ t.found }}: {{ citationsFound }}</span>
+              <span class="text-red-500">{{ t.failedCount }}: {{ citationsError }}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-hairline dark:border-surface-tile-2 shrink-0">
+            <div class="text-[12px] text-ink-muted-48 font-normal tracking-apple-nav">
+              {{ textInput.length }} characters
+            </div>
+            <button @click="processDOIs" :disabled="isProcessing || !textInput.trim()" class="btn-apple flex items-center gap-2 px-5 py-[11px] bg-primary text-white rounded-full hover:bg-primary-focus disabled:opacity-50 transition-colors text-[17px] outline-none">
+              <span v-if="isProcessing">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              </span>
+              <span v-if="isProcessing && progressTotal > 0">{{ t.processed.replace('{0}', progressDone).replace('{1}', progressTotal) }}</span>
+              <span v-else-if="isProcessing">{{ t.extracting }}</span>
+              <span v-else>{{ t.extractBtn }}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULTS TILE (Parchment/Dark Tile) -->
+      <section v-if="citations.length > 0" class="flex-1 bg-canvas-parchment dark:bg-surface-tile-1 w-full px-4 md:px-8 py-8 flex flex-col items-center">
+        <div class="w-full max-w-[980px]">
+          
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h2 class="text-[40px] font-semibold tracking-apple-display text-ink dark:text-white leading-[1.10]">
+                {{ t.resultsTitle }}
+              </h2>
+              <p class="text-[21px] font-semibold tracking-tight text-ink-muted-80 dark:text-gray-300 mt-2">
+                {{ citationsFound }} {{ t.citations }} {{ t.found }}.
+                <span v-if="citationsError > 0" class="text-red-600 dark:text-red-400 ml-2">
+                  {{ citationsError }} {{ t.error }}.
+                </span>
+              </p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4 text-[14px]">
+              <div class="relative">
+                <select v-model="doiMode" class="appearance-none bg-canvas dark:bg-surface-tile-2 border border-hairline dark:border-surface-tile-3 text-ink dark:text-white py-2 pl-4 pr-10 rounded-[11px] outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+                  <option value="url">{{ t.vancouverUrl }}</option>
+                  <option value="doi">{{ t.vancouverDoi }}</option>
+                  <option value="hidden">{{ t.vancouverHidden }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-ink-muted-48">
+                  <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
+              
+              <button @click="copyAll" class="btn-apple px-4 py-2 border border-hairline dark:border-surface-tile-3 bg-surface-pearl dark:bg-surface-tile-2 text-ink dark:text-white rounded-[11px] hover:bg-canvas dark:hover:bg-surface-tile-3 transition-colors outline-none flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                {{ t.copyAll }}
+              </button>
+              <button v-if="hasPdf" @click="downloadAllPdfs" :disabled="bulkDownloadState.active" class="btn-apple px-4 py-2 border border-hairline dark:border-surface-tile-3 bg-surface-pearl dark:bg-surface-tile-2 text-ink dark:text-white rounded-[11px] hover:bg-canvas dark:hover:bg-surface-tile-3 transition-colors outline-none flex items-center gap-1.5 disabled:opacity-50">
+                <svg v-if="!bulkDownloadState.active" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <svg v-else class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                {{ bulkDownloadState.active ? `${t.downloading} (${bulkDownloadState.done}/${bulkDownloadState.total})` : t.pdfAll }}
+              </button>
+
+              <button @click="exportCsv" class="btn-apple px-4 py-2 border border-hairline dark:border-surface-tile-3 bg-surface-pearl dark:bg-surface-tile-2 text-ink dark:text-white rounded-[11px] hover:bg-canvas dark:hover:bg-surface-tile-3 transition-colors outline-none flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                CSV
+              </button>
+            </div>
+          </div>
+          
+          <!-- Citations List -->
+          <div class="w-full flex flex-col">
+            <div v-for="(item, index) in citations" :key="item.doi" class="py-8 border-b border-divider-soft dark:border-surface-tile-2 flex flex-col md:flex-row gap-6">
+              
+              <div class="flex-1">
+                <div v-if="item.status === 'loading'" class="animate-pulse space-y-3 py-1">
+                  <div class="h-4 bg-hairline dark:bg-surface-tile-3 rounded w-1/4"></div>
+                  <div class="h-4 bg-hairline dark:bg-surface-tile-3 rounded w-3/4"></div>
+                </div>
+                
+                <div v-else-if="item.status === 'found'">
+                  <div class="text-[17px] leading-[1.47] tracking-apple-body text-ink dark:text-gray-100 font-serif mb-4" v-html="formattedCitation(item, index)"></div>
+                  <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-[12px] tracking-apple-nav text-ink-muted-48 bg-hairline/30 dark:bg-surface-tile-3 px-2 py-1 rounded-[5px]">
+                      {{ item.doi }}
+                    </span>
+                    <span class="text-[12px] tracking-apple-nav text-green-700 dark:text-green-400 bg-green-500/10 px-2 py-1 rounded-[5px] flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      {{ item.source === 'cache' ? 'Cache' : item.source }}
+                    </span>
+                    <span v-if="item.meta && item.meta.oaStatus" :class="oaBadgeClass(item.meta.oaStatus)" class="text-[12px] tracking-apple-nav px-2 py-1 rounded-[5px] flex items-center gap-1 font-medium">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      {{ oaBadgeLabel(item.meta.oaStatus) }}
+                      <span v-if="item.meta.license" class="opacity-70 font-normal">({{ item.meta.license }})</span>
+                    </span>
+                  </div>
+                </div>
+                
+                <div v-else class="text-[17px]">
+                  <div class="text-[12px] text-ink-muted-48 mb-2">{{ item.doi }}</div>
+                  <div class="text-red-600 dark:text-red-400 font-medium">{{ item.error || t.notFound }}</div>
+                </div>
+              </div>
+              
+              <div class="flex shrink-0 items-start gap-2" v-if="item.status === 'found'">
+                <button v-if="item.pdfUrl" @click="downloadPdf(item)" :disabled="item.isDownloading" class="btn-apple bg-transparent text-primary dark:text-primary-on-dark text-[14px] px-3 py-1.5 border border-divider-soft dark:border-surface-tile-3 rounded-[11px] hover:bg-canvas dark:hover:bg-surface-tile-3 transition-colors outline-none flex items-center gap-1.5 disabled:opacity-50">
+                  <svg v-if="!item.isDownloading" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  <svg v-else class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  {{ item.isDownloading ? '...' : 'PDF' }}
+                </button>
+                <button @click="copySingle(item)" class="btn-apple bg-transparent text-primary dark:text-primary-on-dark text-[14px] px-3 py-1.5 border border-divider-soft dark:border-surface-tile-3 rounded-[11px] hover:bg-canvas dark:hover:bg-surface-tile-3 transition-colors outline-none flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  {{ t.copy }}
+                </button>
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="bg-canvas-parchment dark:bg-surface-tile-1 w-full px-4 md:px-8 pt-16 pb-8 flex flex-col items-center">
+        <div class="max-w-[980px] w-full text-[12px] text-ink-muted-48 tracking-apple-nav border-t border-hairline dark:border-surface-tile-3 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>© 2026 DOIGenMe.</p>
+          <div class="flex gap-4">
+            <a href="#" class="hover:text-ink dark:hover:text-white transition-colors">Privacy Policy</a>
+            <span class="border-l border-hairline dark:border-surface-tile-3"></span>
+            <a href="#" class="hover:text-ink dark:hover:text-white transition-colors">Terms of Use</a>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+
+    <!-- Failed Downloads Modal -->
+    <div v-if="showFailedDownloadsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 dark:bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-3 rounded-[18px] shadow-apple-modal w-full max-w-lg p-6 flex flex-col">
+        <h3 class="text-[21px] font-semibold text-ink dark:text-white mb-2">{{ t.manualDownloadRequired }}</h3>
+        <p class="text-[14px] text-ink-muted-80 dark:text-gray-300 mb-6">
+          {{ t.pdfDownloadedSuccess.replace('{0}', bulkDownloadState.success).replace('{1}', bulkDownloadState.failed.length) }}
+        </p>
+        
+        <div class="bg-canvas-parchment dark:bg-surface-tile-2 border border-hairline dark:border-surface-tile-3 rounded-[11px] p-4 mb-6 max-h-[200px] overflow-y-auto text-[13px] font-mono text-ink-muted-80 break-all space-y-2">
+          <div v-for="fail in bulkDownloadState.failed" :key="fail.doi">
+            <a :href="fail.pdfUrl" target="_blank" class="text-primary hover:underline" :title="fail.doi">{{ fail.pdfUrl }}</a>
+          </div>
+        </div>
+        
+        <div class="flex items-center justify-end gap-3">
+          <button @click="closeFailedModal" class="btn-apple px-5 py-2.5 rounded-[11px] text-[15px] font-medium text-ink-muted-80 hover:bg-canvas-parchment dark:hover:bg-surface-tile-2 transition-colors outline-none">{{ t.closeBtn }}</button>
+          <button @click="copyFailedLinks" class="btn-apple px-5 py-2.5 rounded-[11px] text-[15px] font-medium bg-primary text-white hover:bg-primary-focus transition-colors outline-none">{{ t.copyLinks }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Modal -->
+    <div v-if="showProjectsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 dark:bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-3 rounded-[18px] shadow-apple-modal w-full max-w-2xl p-6 flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-[21px] font-semibold text-ink dark:text-white">{{ t.projects }}</h3>
+          <button @click="showProjectsModal = false" class="text-ink-muted-80 hover:text-ink dark:hover:text-white outline-none rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto mb-6 pr-2 space-y-3">
+          <div v-if="projects.length === 0" class="text-center py-12 text-ink-muted-48 text-[15px]">
+            {{ t.noProjects }}
+          </div>
+          <div v-for="p in projects" :key="p.id" class="p-4 rounded-[11px] border border-hairline dark:border-surface-tile-3 bg-surface-pearl dark:bg-surface-tile-2 flex flex-col gap-3 group transition-colors hover:border-primary/30">
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="font-medium text-[15px] text-ink dark:text-white flex items-center gap-2">
+                  {{ p.name }}
+                  <span v-if="p.id === currentProjectId" class="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary">{{ t.activeTag }}</span>
+                </h4>
+                <p class="text-[13px] text-ink-muted-48 mt-1">
+                  {{ new Date(p.timestamp).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-US') }} • {{ p.extractedDOIs ? p.extractedDOIs.length : (p.citations ? p.citations.length : 0) }} {{ t.doisCount }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="renameProject(p)" class="p-1.5 rounded hover:bg-hairline dark:hover:bg-surface-tile-3 text-ink-muted-80 outline-none" :title="t.renameProject">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+                <button @click="deleteProject(p.id)" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 outline-none" :title="t.deleteProject">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button @click="loadProject(p)" class="btn-apple px-4 py-2 rounded-[7px] text-[13px] font-medium bg-canvas dark:bg-surface-tile-3 border border-hairline dark:border-surface-tile-3 text-ink dark:text-white hover:bg-hairline dark:hover:bg-surface-tile-2 transition-colors outline-none">
+                {{ t.load }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div v-if="confirmModal.show" class="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 dark:bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-3 rounded-[18px] shadow-apple-modal w-full max-w-sm p-6 flex flex-col">
+        <h3 class="text-[19px] font-semibold text-ink dark:text-white mb-2">{{ confirmModal.title }}</h3>
+        <p class="text-[14px] text-ink-muted-80 dark:text-gray-300 mb-6">{{ confirmModal.text }}</p>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="confirmModal.show = false" class="btn-apple px-4 py-2 rounded-[9px] text-[14px] font-medium text-ink-muted-80 hover:bg-canvas-parchment dark:hover:bg-surface-tile-2 transition-colors outline-none">{{ t.cancelBtn }}</button>
+          <button @click="confirmModal.onConfirm" class="btn-apple px-4 py-2 rounded-[9px] text-[14px] font-medium bg-red-600 text-white hover:bg-red-700 transition-colors outline-none">{{ t.deleteProject }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt Modal -->
+    <div v-if="promptModal.show" class="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 dark:bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-canvas dark:bg-surface-tile-1 border border-hairline dark:border-surface-tile-3 rounded-[18px] shadow-apple-modal w-full max-w-sm p-6 flex flex-col">
+        <h3 class="text-[19px] font-semibold text-ink dark:text-white mb-4">{{ promptModal.title }}</h3>
+        <input ref="promptInput" type="text" v-model="promptModal.value" @keyup.enter="promptModal.onConfirm(promptModal.value)" class="w-full px-4 py-2.5 rounded-[9px] bg-canvas-parchment dark:bg-surface-tile-2 border border-hairline dark:border-surface-tile-3 text-ink dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors mb-6 text-[15px]" autofocus>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="promptModal.show = false" class="btn-apple px-4 py-2 rounded-[9px] text-[14px] font-medium text-ink-muted-80 hover:bg-canvas-parchment dark:hover:bg-surface-tile-2 transition-colors outline-none">{{ t.cancelBtn }}</button>
+          <button @click="promptModal.onConfirm(promptModal.value)" class="btn-apple px-4 py-2 rounded-[9px] text-[14px] font-medium bg-primary text-white hover:bg-primary-focus transition-colors outline-none">{{ t.saveBtn }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div v-if="toastMsg" class="fixed bottom-6 right-6 bg-ink dark:bg-white text-white dark:text-ink px-6 py-4 rounded-[11px] flex items-center gap-3 z-50 transform transition-all duration-300" aria-live="polite">
+      <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+      <span class="text-[14px] font-semibold">{{ toastMsg }}</span>
+    </div>
+
+  </div> <!-- End App -->
+
+  <script src="./js/i18n.js"></script>
+  <script src="./js/00_model.js"></script>
+  <script src="./js/01_api.js"></script>
+  <script src="./js/02_view.js"></script>
+  <script src="./js/03_main.js"></script>
+</body>
+</html>
